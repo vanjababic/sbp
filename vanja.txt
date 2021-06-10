@@ -1,0 +1,283 @@
+1. Prikazati razliku u prosecnoj oceni izmedju projekata koji su prikazivani od 2000 do 2019 i onih koji su prikazivani od 1990 do 2000
+
+db.getCollection('projects2').aggregate([
+
+    
+        {
+            $match:{
+                
+                    $or:[{
+                        'runtime.startYear': {$gt: 2000},
+                        'runtime.startYear': {$lt: 2019}
+                    }]
+            }
+        },
+        {
+            $project:{
+                "primaryTitle":1,
+                "actor":1,
+                "ratings":1
+            
+                
+            }
+            
+        },
+        {
+                $group:{"_id":"_id","avgOcena1":{$avg:"$ratings.averageRating"}}
+        }
+    
+
+])
+
+db.getCollection('projects2').aggregate([
+
+    
+        {
+            $match:{
+                $or:[{
+                    'runtime.startYear': {$gt: 1990},
+                    'runtime.startYear': {$lt: 2000}
+                }]
+            }
+        },
+        {
+            $project:{
+                "primaryTitle":1,
+                "actor":1,
+                "ratings":1
+            
+                
+            }
+            
+        },
+        {
+                $group:{"_id":"_id","avgOcena1":{$avg:"$ratings.averageRating"}}
+        }
+    
+
+])
+
+2. Odrediti da li veci broj glasova dobijaju filmovi koji su po zanru komedija ili ratni
+
+db.getCollection('projects').aggregate([
+        
+        {$unwind : "$genres"},
+        {$match: { "genres": {$in : ["War", "Comedy"]}} },
+	{$group : {
+			"_id" : "$genres",
+			"points_get" : {"$sum" : "$ratings.numVotes"},
+		}}
+    
+    ])
+                
+
+
+3. Za slicne grupe zanrova odrediti kolika im je prosecna ocena, koliko su ukupno dobili glasova od publike i prikazati sve filmove koji pripadaju toj grupi
+
+db.getCollection('projects2').aggregate([
+    
+    {$unwind : "$genres"},
+    {
+        $match:{
+            'ratings.averageRating':{$gt:8.5},
+            
+            
+        }
+    },
+    {$group : {
+                    "_id" : {"similarGenres" :{
+                        $cond: [{ $in: ["$genres", ["Documentary", "Short", "History"] ]}, 4, 
+                            {
+                                $cond: [{ $in: ["$genres", ["Horror", "Crime", "War"] ]}, 3,
+                                {
+                                    $cond: [{ $in: ["$genres", ["Musical", "Music", "Animation"] ]}, 2,
+                                    {
+                                        $cond: [{ $in: ["$genres", ["Sci-Fi", "Fantasy", "Drama"] ]}, 1, 0]
+                                    }]
+                                }]
+                            }]
+                          }
+                      },
+                        
+
+        
+                    "avgRating" : {"$avg" : "$ratings.averageRating"},
+                    "pointsGet" : {"$sum" : "$ratings.numVotes"},
+                    'filmovi': { $push:  { 'primaryTitle': "$primaryTitle","rating": "$ratings.averageRating", 'isAdult':"$isAdult" , 'runtime': "$runtime.runtimeMinutes"} },
+                    
+            }}/*,
+            { $group : {
+                    "_id": {
+                        "similarGenres" : "$_id.similarGenres"
+                        },
+                    "avgRating" : {$first : "$_id.avgRating"},
+                    "pointsGet": {$first : "$pointsGet"}
+                }}*/
+    ])
+
+
+
+
+4.Prikazati drame snimljene pre 1900 godine koje imaju prosecnu ocenu vecu od 8.5 i traju manje od 10 minuta, sortirano po pocetku prikazivanja
+
+db.getCollection('projects2').aggregate([
+     
+        {$unwind : "$genres"},
+        {$match: { "genres": {$in : ["Drama"]}} },
+            {
+            $match:{
+                'ratings.averageRating':{$gt:6},
+                'ratings.numVotes':{$gt:1000}
+                
+                
+            }
+        },
+	{$group : {
+			"_id" : "$genres",
+			"points_get" : {"$sum" : "$ratings.numVotes"},
+                        'filmovi': { $push:  { 'primaryTitle': "$primaryTitle","rating": "$ratings.averageRating", 'isAdult':"$isAdult" , 'runtime':"$runtime"} },
+                        
+		}},
+        {$match: { "filmovi.runtime.startYear": {$lte : 1900}} },
+        {$match: { "filmovi.runtime.runtimeMinutes": {$lte : 10}} },
+        {$match: { "filmovi.rating": {$gt : 8.5}} },
+        {$sort: {'filmovi.runtime.startYear' : 1}}
+    ])
+
+
+5. Izlistati nazive, ukupan broj bodova i prosecne ocene svih filmova koji su ocenjeni sa najlosijim ocenama, kao i broj bodova koje je dobio svaki film koji ima tu ocenu, a da filmovi nemaju ograicenje za godine
+
+db.getCollection('projects2').aggregate([
+    
+       {
+            $match:{
+                'ratings.averageRating':{$lt:8},
+                'ratings.numVotes':{$gt:1000}
+                
+                
+            }
+        },
+    {$match: { "isAdult": {$eq : 0}} },
+    {$group : {
+			"_id" : "$ratings.averageRating",
+			"points_get" : {"$sum" : "$ratings.numVotes"},
+                        'filmovi': { $push:  { 'primaryTitle': "$primaryTitle","rating": "$ratings.averageRating"} }
+
+		}
+     },
+     {$match: { "_id": {$lt : 5}} },
+     {$sort: {'points_get':1,'_id' : 1}},
+     {$limit:5}
+    ])
+        
+================================================================================================================================
+
+
+1.
+db.getCollection('projects').aggregate([
+
+    
+        {
+            $match:{
+                $or:[{
+                    'startYear': {$gt: 1990},
+                    'startYear': {$lt: 2000}
+                }]
+            }
+        },
+        {
+            $project:{
+                "primaryTitle":1,
+                "actor":1,
+                "ratings":1
+            
+                
+            }
+            
+        },
+        {
+                $group:{"_id":"_id","avgOcena1":{$avg:"$averageRating"}}
+        }
+    
+
+])
+2.
+db.getCollection('projects').aggregate([
+        
+        
+        {$match: { "genres": {$in : ["War", "Comedy"]}} },
+	{$group : {
+			"_id" : "$genres",
+			"points_get" : {"$sum" : "$numVotes"},
+		}}
+    
+    ])
+
+3.
+db.getCollection('projects').aggregate([
+    
+   
+    {
+        $match:{
+            'averageRating':{$gt:9.4},
+            
+            
+        }
+    },
+    {$group : {
+                    "_id" : {"similarGenres" :{
+                        $cond: [{ $in: ["$genres", ["Documentary", "Short", "History"] ]}, 4, 
+                            {
+                                $cond: [{ $in: ["$genres", ["Horror", "Crime", "War"] ]}, 3,
+                                {
+                                    $cond: [{ $in: ["$genres", ["Musical", "Music", "Animation"] ]}, 2,
+                                    {
+                                        $cond: [{ $in: ["$genres", ["Sci-Fi", "Fantasy", "Drama"] ]}, 1, 0]
+                                    }]
+                                }]
+                            }]
+                          }
+                      },
+                        
+
+        
+                    "avgRating" : {"$avg" : "$averageRating"},
+                    "pointsGet" : {"$sum" : "$numVotes"},
+                    'filmovi': { $push:  { 'primaryTitle': "$primaryTitle","rating": "$averageRating", 'isAdult':"$isAdult" , 'runtime': "$runtimeMinutes"} },
+                    
+            }}/*,
+            { $group : {
+                    "_id": {
+                        "similarGenres" : "$_id.similarGenres"
+                        },
+                    "avgRating" : {$first : "$_id.avgRating"},
+                    "pointsGet": {$first : "$pointsGet"}
+                }}*/
+    ],{ allowDiskUse: true })
+
+
+5.Izlistati nazive, ukupan broj bodova i prosecne ocene svih filmova koji su ocenjeni sa najlosijim ocenama, kao i broj bodova koje je dobio svaki film koji ima tu ocenu, a da filmovi nemaju ograicenje za godine
+
+db.getCollection('projects').aggregate([
+    
+       {
+            $match:{
+                'averageRating':{$lt:8},
+                'numVotes':{$gt:1000}
+                
+                
+            }
+        },
+    {$match: { "isAdult": {$eq : 0}} },
+    {$group : {
+			"_id" : "$averageRating",
+			"points_get" : {"$sum" : "$numVotes"},
+                        'filmovi': { $push:  { 'primaryTitle': "$primaryTitle","rating": "$averageRating"} }
+
+		}
+     },
+     {$match: { "_id": {$lt : 5}} },
+     {$sort: {'points_get':1,'_id' : 1}},
+     {$limit:5}
+    ],{ allowDiskUse: true })
+

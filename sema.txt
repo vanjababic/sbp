@@ -1,0 +1,101 @@
+BAZA1
+
+{
+    "_id" : ObjectId("60c20c8f4da77e90da5aa21a"),
+    "primaryTitle" : "Carmencita",
+    "titleType" : "short",
+    "originalTitle" : "Carmencita",
+    "isAdult" : 0,
+    "genres" : [ 
+        "Documentary", 
+        "Short"
+    ],
+    "startYear" : 1894,
+    "endYear" : "\\N",
+    "runtimeMinutes" : 1,
+    "averageRating" : 5.6,
+    "numVotes" : 1550,
+    "primaryName" : "William K.L. Dickson",
+    "birthYear" : "1860",
+    "deathYear" : "1935",
+    "category" : "director",
+    "job" : "\\N",
+    "characters" : "\\N",
+    "primaryProfession" : [ 
+        "cinematographer", 
+        "director", 
+        "producer"
+    ]
+}
+
+
+BAZA2
+
+{
+    "_id" : ObjectId("60c087674da77e90da5a7a1c"),
+    "primaryTitle" : "Le clown et ses chiens",
+    "titleType" : "short",
+    "originalTitle" : "Le clown et ses chiens",
+    "isAdult" : 0,
+    "genres" : [ 
+        "Animation", 
+        "Short"
+    ],
+    "runtime" : {
+        "startYear" : 1892,
+        "endYear" : "\\N",
+        "runtimeMinutes" : 5
+    },
+    "ratings" : {
+        "averageRating" : 6.1,
+        "numVotes" : 186
+    },
+    "actor" : [ 
+        {
+            "primaryName" : "Émile Reynaud",
+            "live" : {
+                "birthYear" : "1844",
+                "deathYear" : "1918"
+            },
+            "category" : "director",
+            "job" : "\\N",
+            "characters" : "\\N",
+            "primaryProfession" : [ 
+                "director"
+            ]
+        }, 
+        {
+            "primaryName" : "Gaston Paulin",
+            "live" : {
+                "birthYear" : "1839",
+                "deathYear" : "1903"
+            },
+            "category" : "composer",
+            "job" : "\\N",
+            "characters" : "\\N",
+            "primaryProfession" : [ 
+                "composer"
+            ]
+        }
+    ],
+    "regioni" : [ 
+        {
+            "region" : "\\N"
+        }, 
+        {
+            "region" : "HU"
+        }, 
+        {
+            "region" : "FR"
+        }, 
+        {
+            "region" : "RO"
+        }, 
+        {
+            "region" : "RU"
+        }, 
+        {
+            "region" : "US"
+        }
+    ]
+}

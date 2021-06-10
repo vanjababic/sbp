@@ -1,0 +1,493 @@
+1. izlistati za sve filmove njihov zanr i podzanr sa ocenom vecom od 8 i brojem glasova vecim od 1000000
+
+db.projects2.aggregate([
+
+
+    {
+        $match:{
+            'ratings.averageRating':{$gt:8.0},
+            'ratings.numVotes':{$gt:1000000}
+            
+        }
+    },
+
+    {
+        $group:{
+            "_id":{"primaryTitle":'$primaryTitle'},
+            'titleType':{$addToSet:'$titleType'},
+            'genres':{$addToSet:'$genres'}
+            
+    }
+    }
+    
+])
+
+
+2. za svaku drzavu izlistati najbolji projekate sortirano koji ima broj glasova iznad 100000 i izracunati prosecan broj glasova po zemlji i prikazati na kom jeziku su se prikazivali
+
+db.projects2.aggregate([
+    
+    {
+      $match:{
+            'ratings.averageRating':{$gt:8.5},
+            
+            
+        }
+    },
+
+    { $unwind: "$regioni"
+
+    },
+    
+    { $group: { "_id": "$regioni.region"  ,
+                "NumVotesAverage": { "$avg": { "$ifNull": ["$ratings.numVotes",0 ] } },
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'averagerating': "$ratings.averageRating",'brojglasova':'$ratings.numVotes' } },
+                
+                
+                
+              }
+     },
+     
+     {$unwind:'$filmovi'},
+     {$sort : {'filmovi.averagerating' : -1}},
+     {
+      $match:{
+            'filmovi.brojglasova':{$gt:100000},
+            
+            
+        }
+    },
+    
+    { $group: { "_id": "$_id"  ,
+                "NumVotesAverage":{ "$first":'$NumVotesAverage'},
+        
+               
+                'filmovi': { $push:  { 'primaryTitle': "$filmovi.primaryTitle", 'averagerating': "$filmovi.averagerating",'brojglasova':'$filmovi.numVotes' } },
+                
+                
+              }
+     },
+     
+     {$sort : {'filmovi.averagerating' : -1}},
+     { $project: { "_id": 1, "filmovi": 1, "NumVotesAverage":1 } } 
+    
+
+     
+     
+
+
+])
+
+
+
+3. izlistati samo filmove koji su tipa komedija sa najboljom ocenom u svakoj godini sortirano po godini prikazivanja, a zatim i prikazati top 10 filmova
+
+db.projects2.aggregate([
+    
+    {
+      $match:{
+            'titleType':'movie',
+            'ratings.averageRating':{$gt:8.0}
+            
+            
+        }
+    },
+    {$unwind:"$genres"},
+    {
+        $match:{"genres":{$in:['Comedy']}}
+        
+        
+    },
+    { $group: { "_id": "$runtime.startYear"  ,
+               
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'genres':'$genres','averagerating': "$ratings.averageRating",'brojglasova':'$ratings.numVotes' } },
+                
+                
+                
+              }
+     },
+
+     {$unwind:'$filmovi'},
+     {$sort : {'filmovi.averagerating' : -1}},
+     
+     { $group: { "_id": "$_id"  ,
+               
+        
+   
+                'filmovi': { $push:  { 'primaryTitle': "$filmovi.primaryTitle", 'averagerating': "$filmovi.averagerating",'brojglasova':'$filmovi.numVotes' } },
+                
+                
+              }
+     },
+     
+     {$sort : {'_id' : -1}},
+   
+
+])
+
+db.projects2.aggregate([
+    
+    {
+      $match:{
+            'titleType':'movie',
+            'ratings.averageRating':{$gt:8.0}
+            
+            
+        }
+    },
+    {$unwind:"$genres"},
+    {
+        $match:{"genres":{$in:['Comedy']}}
+        
+        
+    },
+    { $group: { "_id": "$runtime.startYear"  ,
+               
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'genres':'$genres','averagerating': "$ratings.averageRating",'brojglasova':'$ratings.numVotes' } },
+                
+                
+                
+              }
+     },
+
+     {$unwind:'$filmovi'},
+     {$sort : {'filmovi.averagerating' : -1}},
+      { $limit : 10 }
+])
+
+
+
+
+
+4.izlistati fantasy film i drama serije po svakoj godini,iznad prosecnog  broja glasova za sve serije i prebrojati koliko ih ima iznad ocene 8.5.
+db.projects2.aggregate([
+   
+      {
+      $match:{
+            'titleType':'tvEpisode',
+            'ratings.averageRating':{$gt:8.5}
+            
+            
+        }
+   
+    },
+   { $group: { "_id": "_id"  ,
+                "NumVotesAverage": { "$avg": { "$ifNull": ["$ratings.numVotes",0 ] } },
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'averagerating': "$ratings.averageRating",'brojglasova':'$ratings.numVotes' } },
+                
+                
+                
+              }
+     }
+    
+])
+ 
+
+
+db.projects2.aggregate([
+    
+    {
+      $match:{
+            'titleType':'tvEpisode',
+            'ratings.averageRating':{$gt:8.5},
+            'ratings.numVotes':{$gt:350}
+            
+            
+        }
+    },
+    {$unwind:"$genres"},
+    {
+        $match:{"genres":{$in:['Drama','Fantasy']}}
+        
+        
+    },
+    {$group: { "_id":"$runtime.startYear", "count": {$sum: 1},
+    
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'genres':'$genres','averagerating': "$ratings.averageRating" } }
+    }
+    
+    
+    
+    },
+    {$sort : {'_id' : -1}}
+    
+])
+
+
+
+
+5 izlistati pisce koji su pisali top 10 najboljih serija.
+
+
+db.getCollection('projects2').aggregate([
+
+  {$unwind:"$actor"},
+ 
+  
+  {
+      
+               $match:{
+                'actor.category':'writer',
+                 'ratings.averageRating':{$gt:8.5},
+                 'ratings.numVotes':{$gt:1000000}
+               }     
+      
+  },
+  {$sort : {'ratings.averageRating' : -1}},
+  { $limit : 10 },
+  
+    { $group: { "_id": "$actor.primaryName"  ,
+                
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'averagerating': "$ratings.averageRating" } },
+                
+                
+                
+              }
+     },
+  
+  
+  
+
+
+
+])
+6.za svaku godinu rodjenja glumaca izlistati redom najuspesnije glumce i najuspesniji projekat na kom su glumili.
+db.getCollection('projects2').aggregate([
+
+  {$unwind:"$actor"},
+  {$unwind:'$actor.primaryProfession'},
+  
+  {
+      
+               $match:{
+                'actor.primaryProfession':'actor',
+                 'ratings.averageRating':{$gt:8.5},
+                 'ratings.numVotes':{$gt:1000000}
+               }     
+      
+  },
+    {$sort : {'ratings.averageRating' : -1}},
+  
+    { $group: { "_id": "$actor.primaryName"  ,
+                'godinarodjenja': { "$first": "$actor.live.birthYear" },
+                
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'averagerating': "$ratings.averageRating" } },
+                
+                
+                
+              }
+     },
+     
+    
+    { $group: { "_id": "$godinarodjenja" ,
+                
+                'glumci':{$push:{'_id':'$_id','primaryTitle':{ "$first": "$filmovi.primaryTitle" }}},
+                
+                
+                
+              }
+     },
+       {$sort : {'_id' : -1}},
+  
+ 
+  
+  
+  
+  
+
+
+
+])
+7.
+db.projects2.aggregate([
+      {
+      $match:{
+            'ratings.averageRating':{$gt:9.5},
+
+
+        }
+    },
+   
+    {$unwind : "$actor"},
+       
+    {$unwind : "$actor.primaryProfession"},
+    {$group : {
+                    "_id" : {"similarprofessions" :{
+                        $cond: [{ $in: ["$actor.primaryProfession", ["actor", "actress"] ]}, 4, 
+                            {
+                                $cond: [{ $in: ["$actor.primaryProfession", ["animation_department", "art_department", "art_director"] ]}, 3,
+                                {
+                                    $cond: [{ $in: ["$actor.primaryProfession", ["director", "editor", "manager"] ]}, 2,
+                                    {
+                                        $cond: [{ $in: ["$actor.primaryProfession", ["music_department", "producer", "publicist"] ]}, 1, 0]
+                                    }]
+                                }]
+                            }]
+                          }
+                      },
+                  
+                    'acotri': { $push:  { 'primaryName': "$actor.primaryName"} },
+
+            }},
+
+
+])
+--------------------------------------------------------------------==========================================
+1. izlistati za sve filmove njihov zanr i podzanr sa ocenom vecom od 8 i brojem glasova vecim od 1000000
+
+db.projects2.aggregate([
+
+
+    {
+        $match:{
+            'averageRating':{$gt:8.0},
+            'numVotes':{$gt:1000000}
+            
+        }
+    },
+
+    {
+        $group:{
+            "_id":{"primaryTitle":'$primaryTitle'},
+            'titleType':{$addToSet:'$titleType'},
+            'genres':{$addToSet:'$genres'}
+            
+    }
+    }
+    
+])
+2.
+db.getCollection('projects').aggregate([
+    
+    {
+      $match:{
+            'averageRating':{$gt:9.2},
+            
+            
+        }
+    },
+ 
+    { $group: { "_id": "$region"  ,
+                "NumVotesAverage": { "$avg": { "$ifNull": ["$numVotes",0 ] } },
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'averagerating': "$averageRating",'brojglasova':'$numVotes' } },
+                
+                
+                
+              }
+     }
+     
+     
+     
+     
+
+
+],{ allowDiskUse: true })
+3.
+
+db.projects.aggregate([
+    
+    {
+      $match:{
+            'titleType':'movie',
+            'averageRating':{$gt:9.3}
+            
+            
+        }
+    },
+    
+    {
+        $match:{"genres":'Comedy'}
+        
+        
+    },
+    { $group: { "_id": "$startYear"  ,
+               
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'genres':'$genres','averagerating': "$averageRating",'brojglasova':'$numVotes' } },
+                
+                
+                
+              }
+     },
+
+     {$unwind:'$filmovi'},
+     {$sort : {'filmovi.averagerating' : -1}},
+      { $limit : 10 }
+])
+
+4.
+db.projects2.aggregate([
+    
+    {
+      $match:{
+            'titleType':'tvEpisode',
+            'averageRating':{$gt:8.5},
+            'numVotes':{$gt:350}
+            
+            
+        }
+    },
+ 
+    {
+        $match:{"genres":{$in:['Drama','Fantasy']}}
+        
+        
+    },
+    {$group: { "_id":"$startYear", "count": {$sum: 1},
+    
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'genres':'$genres','averagerating': "$averageRating" } }
+    }
+    
+    
+    
+    },
+    {$sort : {'_id' : -1}}
+    
+])
+
+
+5.
+db.getCollection('projects').aggregate([
+
+ 
+ 
+  
+  {
+      
+               $match:{
+                'category':'writer',
+                 'averageRating':{$gt:8.5},
+                 'numVotes':{$gt:1000000}
+               }     
+      
+  },
+  {$sort : {'averageRating' : -1}},
+  { $limit : 10 },
+  
+    { $group: { "_id": "$primaryName"  ,
+                
+                'filmovi': { $push:  { 'primaryTitle': "$primaryTitle", 'averagerating': "$averageRating" } },
+                
+                
+                
+              }
+     },
+  
+  
+  
+
+
+
+])
+
+
+vanja
+1. Prikazati razliku u prosecnoj oceni izmedju filmova u kojima su glumili glumci rodjeni 
+pre 1800. godine i filmova u kojima su glumili glumci rodjeni od 1900 do 1950.
+
+2. Odrediti da li veci broj glasova dobijaju filmovi kojima je komedija primaran ili sekundaran zanr
+
+3. Odrediti da li vece ocene dobijaju filmovi na kojima primarno rade glumci ili oni na kojima primarno rade glumice
+
+4. Prikazati ocene serija koje su se prikazivale duže od prosečne dužine prikazivanja serija i ocene serija koje su se prikazivale krace od prosečne dužine prikazivanja serija.
+
+5. Da li su veci broj glasova dobili filmovi na kojima glume glumci koji su i dalje zivi ili oni filmovi na kojima su glumili glumci koji su preminuli
